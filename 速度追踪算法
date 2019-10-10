@@ -1,0 +1,172 @@
+++++++++++++++++++++++++++++++++++++++++在matlab中仿真的++++++++++++++++++++++++++++++++++++++
+clear; clc; close all
+
+% vel_x = 0.94324342;
+% vel_y = -0.23213;
+% vel_w = 0;
+
+vel_x = -1.2+2.4*rand;
+vel_y = -1.2+2.4*rand;
+vel_w = -1+2*rand;
+
+cmd_vel_vx_last = 0;
+cmd_vel_vy_last = 0;
+cmd_vel_vw_last = 0;
+
+i =1;
+%%
+ex_flag = 0;
+if ex_flag == 1
+    cmd_vel_vx_err = agv_vel.bv_x - cmd_vel_vx_last;
+    cmd_vel_vy_err = agv_vel.bv_y - cmd_vel_vy_last;
+    cmd_vel_vw_err = agv_vel.bw - cmd_vel_vw_last;
+    while( (fabs(cmd_vel_vx_err) > 10) || (fabs(cmd_vel_vy_err) > 10) || (fabs(cmd_vel_vw_err) > 0.01))
+        
+        agv_vel.bv_x = velCtrl(cmd_vel_vx_mmps, cmd_vel_vx_last, 11, 8, 1200, -1200);
+        agv_vel.bv_y = velCtrl(cmd_vel_vy_mmps, cmd_vel_vy_last, 11, 8, 1200, -1200);
+        agv_vel.bw = velCtrl(cmd_vel_vw_radps, cmd_vel_vw_last, 0.03,0.01, 1, -1);
+        
+        AGVInverse_Kinematics_calc agv_parmater;
+        
+        
+        SetWheelAngle(agv_parmater.left_rearangle * 180 / pi,agv_parmater.right_frontangle * 180 / pi);
+        
+        SetWheelSpeed(agv_parmater.left_rearspeed *  60 * 28 /(pi * 0.210 * 1000),agv_parmater.right_frontspeed *  60 * 28 / (pi * 0.210 * 1000));
+        
+        cmd_vel_vx_err = agv_vel.bv_x - cmd_vel_vx_last;
+        cmd_vel_vy_err = agv_vel.bv_y - cmd_vel_vy_last;
+        cmd_vel_vw_err = agv_vel.bw - cmd_vel_vw_last;
+        
+        cmd_vel_vx_last = agv_vel.bv_x;
+        cmd_vel_vy_last = agv_vel.bv_y;
+        cmd_vel_vw_last = agv_vel.bw;
+        
+        usleep(90000);
+    end
+    
+end
+%%
+cmd_vel_vx_mmps = vel_x * 1000;
+cmd_vel_vy_mmps = vel_y * 1000;
+cmd_vel_vw_radps = vel_w;
+
+v_x = vel_x * 1000;
+v_y = vel_y * 1000;
+v_w = vel_w ;	 
+
+cmd_vel_vx_err = v_x - cmd_vel_vx_last;
+cmd_vel_vy_err = v_y - cmd_vel_vy_last;
+cmd_vel_vw_err = v_w - cmd_vel_vw_last;
+
+while( ((abs(cmd_vel_vx_err) > 10) || (abs(cmd_vel_vy_err) > 10) || (abs(cmd_vel_vw_err) > 0.1)) && (i<100))
+    v_x = velCtrl(cmd_vel_vx_mmps, cmd_vel_vx_last, 20, 10, 1200, -1200)
+    v_y = velCtrl(cmd_vel_vy_mmps, cmd_vel_vy_last, 20, 10, 1200, -1200)
+    v_w = velCtrl(cmd_vel_vw_radps, cmd_vel_vw_last, 0.03,0.01, 1, -1)
+
+    out_x(i) = v_x;
+    out_y(i) = v_y;
+    out_w(i) = v_w;
+
+    cmd_vel_vx_err = v_x - cmd_vel_vx_last;
+    cmd_vel_vy_err = v_y - cmd_vel_vy_last;
+    cmd_vel_vw_err = v_w - cmd_vel_vw_last;
+    
+	cmd_vel_vx_last = v_x;
+    cmd_vel_vy_last = v_y;
+    cmd_vel_vw_last = v_w;
+    
+    i=i+1
+end
+plot(out_x,'b');hold on
+plot(out_y,'k');hold on
+plot(1000*out_w,'r');hold on
+
+%%
+function ctrl_spd = velCtrl(speed_goal, speed_pre, speed_step, speed_resolution, speed_max, speed_min)
+
+    if(speed_goal > speed_max)
+        speed_goal = speed_max;
+    elseif(speed_goal < speed_min)
+        speed_goal = speed_min;
+    else
+        speed_goal = speed_goal;
+    end
+	
+    speed_diff = speed_goal - speed_pre;
+    if(speed_diff == 0)
+        speed_diff = speed_diff + 0.00001;
+    end
+
+    if(speed_step > speed_resolution)
+        if(abs(speed_diff) <= abs(speed_step))
+            ctrl_spd = speed_goal;
+        else
+            ctrl_spd = speed_pre + speed_step * (speed_diff/abs(speed_diff));
+        end
+    else
+        ctrl_spd = speed_goal;
+    end
+end
+
+/*
+速度逼近目标速度
+
+		double err_x = twist_tmp.linear.x - twist_last.linear.x;
+		double err_y = twist_tmp.linear.y - twist_last.linear.y;
+		double err_z = twist_tmp.angular.z - twist_last.angular.z;
+		while ((fabs(err_x) >= 0.01) || fabs(err_y) >= 0.01 ||fabs(err_z) >= 0.01)
+		{
+			geometry_msgs::Twist twist_pub;
+			twist_pub.linear.x = pTeleopTurtle->velLimit(twist_tmp.linear.x, twist_last.linear.x, 0.01, 1.2, -1.2);
+			twist_pub.linear.y = pTeleopTurtle->velLimit(twist_tmp.linear.y, twist_last.linear.y, 0.01, 1.2, -1.2);
+			twist_pub.angular.z = pTeleopTurtle->velLimit(twist_tmp.angular.z, twist_last.angular.z, 0.01, 1.2, -1.2);
+
+			pTeleopTurtle->vel_pub_.publish(twist_pub);
+			twist_last.linear.x = twist_pub.linear.x;
+			twist_last.linear.y = twist_pub.linear.x;
+			twist_last.angular.z = twist_pub.linear.x;
+
+			err_x = twist_tmp.linear.x - twist_last.linear.x;
+			err_y = twist_tmp.linear.x - twist_last.linear.x;
+			err_z = twist_tmp.linear.x - twist_last.linear.x;
+			usleep(10000);
+		}
+
+
+++++++++++++++++++++++++++++++++++++在实际中使用的++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+double TeleopTurtle::velLimit(double speed_goal, double speed_pre, double speed_step, double speed_max, double speed_min)
+{
+	double speed_diff = speed_goal - speed_pre;
+	double speed_ctl = 0.0;
+	if(speed_diff == 0)
+	{
+		speed_diff +=0.00001;
+	}
+
+	//Saturation
+	if(speed_goal > speed_max)
+	{
+		speed_ctl = speed_max;
+	}
+	else if(speed_goal < speed_min)
+	{
+		speed_ctl = speed_min;
+	}
+	else
+	{
+		speed_ctl = speed_goal;
+	}
+	
+	//Rate limiter
+	if(fabs(speed_diff) > fabs(speed_step))
+	{
+		speed_ctl = speed_pre + speed_step * (speed_diff/fabs(speed_diff));
+	}
+	else
+	{
+		speed_ctl = speed_goal;
+	}
+	
+
+	return speed_ctl;
+}
