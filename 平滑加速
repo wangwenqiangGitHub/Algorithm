@@ -1,0 +1,27 @@
+新启动一个线程处理速度:
+如果速度变化就线程起作用.不断增加速度,达到目标速度,知道到达目标速度为止.
+
+int speed_smooth_control_flag =1;
+int speed_increase_accr = 60; //回调频率为50HZ, 每次增加60 增加到3000rmp需要1s.
+
+int speed_smooth_control()
+{
+    pthread_t speed_smooth_control_id
+    pthread_create(&speed_smooth_control_id, NULL, speed_smooth_control_callback, NULL);
+}
+void* speed_smooth_control_callback(void *param)
+{
+  int speed1, speed2;
+  int speed_control_flag;
+  while(speed_smooth_control_flag)
+  {
+      if(control_mode == MANUL)//手动控制时
+      {
+          if(set_goal_speed1 = !current_speed1)
+          {
+              speed_control_flag = 1;
+              if()
+          }
+      }
+  }
+}
