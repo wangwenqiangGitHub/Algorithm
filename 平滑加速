@@ -20,7 +20,16 @@ void* speed_smooth_control_callback(void *param)
           if(set_goal_speed1 = !current_speed1)
           {
               speed_control_flag = 1;
+          if(set_goal_speed1 > current_speed1)
+          {
+            current_speed1 += speed_increase_accr;
+            if (current_speed1 > set_goal_speed1)
+            {
+                current_speed1 = set_goal_speed1;
+            }
+          }
               if()
+              
           }
       }
   }
