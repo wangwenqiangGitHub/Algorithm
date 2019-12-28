@@ -20,17 +20,48 @@ void* speed_smooth_control_callback(void *param)
           if(set_goal_speed1 = !current_speed1)
           {
               speed_control_flag = 1;
-          if(set_goal_speed1 > current_speed1)
-          {
-            current_speed1 += speed_increase_accr;
-            if (current_speed1 > set_goal_speed1)
-            {
-                current_speed1 = set_goal_speed1;
-            }
-          }
-              if()
+              if(set_goal_speed1 > current_speed1)
+              {
+                current_speed1 += speed_increase_accr;
+                if (current_speed1 > set_goal_speed1)
+                {
+                    current_speed1 = set_goal_speed1; 
+                }
+              }
+               else
+                {
+                    current_speed1 -= speed_increase_accr;
+                    if(current_speed1 < set_goal_speed1)
+                    {
+                        current_speed1 = set_goal_speed1;
+                    }
+                }
               
           }
       }
+      
+      if(speed_control_flag)
+      {
+          speed_control_flag = 0;
+          send(current_speed1);
+      }
+      usleep(20000);
   }
+  
+}
+
+
+当速度变化时，以一定步长增加或减少，稳定运行20ms;
+
+setSpeed(float speed_ )
+{
+    #if(KINCO == -3 )
+    if(control_mode == MANUL)
+    {
+        set_goal_speed1 = speed_;
+    }
+    else
+    {
+        //todo
+    }
 }
